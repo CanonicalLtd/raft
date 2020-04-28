@@ -7,6 +7,7 @@
 #include "assert.h"
 #include "heap.h"
 
+#if defined(__linux__)
 /* Copy the error message from the request object to the writer object. */
 static void uvWriterReqTransferErrMsg(struct UvWriterReq *req)
 {
@@ -248,7 +249,7 @@ int UvWriterInit(struct UvWriter *w,
     }
 
     /* Initialize the array of re-usable event objects. */
-    w->events = HeapCalloc(w->n_events, sizeof *w->events);
+    w->events = MyHeapCalloc(w->n_events, sizeof *w->events);
     if (w->events == NULL) {
         /* UNTESTED: todo */
         ErrMsgOom(errmsg);
@@ -301,7 +302,7 @@ int UvWriterInit(struct UvWriter *w,
 err_after_event_fd:
     UvOsClose(w->event_fd);
 err_after_events_alloc:
-    HeapFree(w->events);
+    MyHeapFree(w->events);
 err_after_io_setup:
     UvOsIoDestroy(w->ctx);
 err:
@@ -314,7 +315,7 @@ static void uvWriterCleanUpAndFireCloseCb(struct UvWriter *w)
     assert(w->closing);
 
     UvOsClose(w->fd);
-    HeapFree(w->events);
+    MyHeapFree(w->events);
     UvOsIoDestroy(w->ctx);
 
     if (w->close_cb != NULL) {
@@ -528,3 +529,37 @@ err:
     assert(rv != 0);
     return rv;
 }
+
+#else /* fallback */
+int UvWriterInit(struct UvWriter *w,
+                 struct uv_loop_s *loop,
+                 uv_file fd,
+                 bool direct /* Whether to use direct I/O */,
+                 bool async /* Whether async I/O is available */,
+                 unsigned max_concurrent_writes,
+                 char *errmsg)
+{
+    void *data = w->data;
+    int rv = 0;
+    memset(w, 0, sizeof *w);
+    w->data = data;
+    w->loop = loop;
+    w->fd = fd;
+    return rv;
+}
+
+int UvWriterSubmit(struct UvWriter *w,
+                   struct UvWriterReq *req,
+                   const uv_buf_t bufs[],
+                   unsigned n,
+                   size_t offset,
+                   UvWriterReqCb cb)
+{
+    return uv_fs_write(w->loop, NULL, w->fd, bufs, n, offset, NULL); //TODO: NULL for request and callback?
+}
+
+void UvWriterClose(struct UvWriter *w, UvWriterCloseCb cb)
+{
+    uv_fs_close(w->loop, NULL, w->fd, NULL); //TODO: NULL for callback and request?
+}
+#endif /* linux */

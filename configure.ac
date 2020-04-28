@@ -10,11 +10,33 @@ AC_USE_SYSTEM_EXTENSIONS # Defines _GNU_SOURCE and similar
 
 LT_INIT
 
+AC_CANONICAL_HOST
+
+build_linux=no
+build_windows=no
+build_mac=no
+
+#Detect target OS
+AS_CASE([$host_os],[linux*],[build_linux=yes])
+AS_CASE([$host_os],[mingw*],[build_windows=yes])
+
+AM_CONDITIONAL([LINUX], [test "x$build_linux" = "xyes"])
+AM_CONDITIONAL([WINDOWS], [test "x$build_windows" = "xyes"])
+
 # The libuv raft_io implementation is built by default if libuv is found, unless
 # explicitely disabled.
 AC_ARG_ENABLE(uv, AS_HELP_STRING([--disable-uv], [do not build the libuv-based raft_io implementation]))
 AS_IF([test "x$enable_uv" != "xno"],
-      [PKG_CHECK_MODULES(UV, [libuv >= 1.8.0], [have_uv=yes], [have_uv=no])],
+      [
+          AM_COND_IF([WINDOWS], 
+          [
+              UV_LIBS="-L$prefix/lib -luv -lpthread -lws2_32 -lpsapi -liphlpapi -lshell32 -luserenv -luser32 -lmswsock -ladvapi32"
+              UV_CFLAGS="-I$prefix/include"
+              AC_SUBST(UV_LIBS)
+              AC_SUBST(UV_CFLAGS)
+          ],
+          [PKG_CHECK_MODULES(UV, [libuv >= 1.8.0], [have_uv=yes], [have_uv=no])])
+        ],
       [have_uv=no])
 AS_IF([test "x$enable_uv" = "xyes" -a "x$have_uv" = "xno"], [AC_MSG_ERROR([libuv required but not found])], [])
 AM_CONDITIONAL(UV_ENABLED, test "x$have_uv" = "xyes")
@@ -101,6 +123,7 @@ CC_CHECK_CFLAGS_APPEND([-Wendif-labels])
 CC_CHECK_CFLAGS_APPEND([-Wdate-time])
 CC_CHECK_CFLAGS_APPEND([-Wnested-externs])
 CC_CHECK_CFLAGS_APPEND([-Wconversion])
+AS_CASE([$host_os],[mingw*],[CC_CHECK_CFLAGS_APPEND([-D__USE_MINGW_ANSI_STDIO])])
 AC_SUBST(AM_CFLAGS)
 
 AC_CONFIG_FILES([raft.pc Makefile])

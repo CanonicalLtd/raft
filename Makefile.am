@@ -33,9 +33,12 @@ libraft_la_SOURCES = \
   src/snapshot.c \
   src/start.c \
   src/state.c \
-  src/syscall.c \
   src/tick.c \
   src/tracing.c
+
+if LINUX
+libraft_la_SOURCES += src/syscall.c
+endif
 
 bin_PROGRAMS =
 
@@ -153,7 +156,6 @@ libtest_la_SOURCES += \
 test_unit_uv_SOURCES = \
   src/err.c \
   src/heap.c \
-  src/syscall.c \
   src/tracing.c \
   src/uv_fs.c \
   src/uv_os.c \
@@ -164,6 +166,10 @@ test_unit_uv_SOURCES = \
 test_unit_uv_LDFLAGS = $(UV_LIBS)
 test_unit_uv_CFLAGS = $(AM_CFLAGS) -Wno-conversion
 test_unit_uv_LDADD = libtest.la
+
+if LINUX
+test_unit_uv_SOURCES += src/syscall.c
+endif
 
 test_integration_uv_SOURCES = \
   test/integration/main_uv.c \

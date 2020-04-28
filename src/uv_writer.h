@@ -22,10 +22,12 @@ struct UvWriter
     struct uv_loop_s *loop;        /* Event loop */
     uv_file fd;                    /* File handle */
     bool async;                    /* Whether fully async I/O is supported */
+#if defined(__linux__)
     aio_context_t ctx;             /* KAIO handle */
     struct io_event *events;       /* Array of KAIO response objects */
     unsigned n_events;             /* Length of the events array */
     int event_fd;                  /* Poll'ed to check if write is finished */
+#endif
     struct uv_poll_s event_poller; /* Poll event_fd for completed poll requests */
     struct uv_check_s check;       /* Check for completed threadpool requests */
     UvWriterCloseCb close_cb;      /* Close callback */
@@ -61,7 +63,9 @@ struct UvWriterReq
     int status;              /* Request result code */
     struct uv_work_s work;   /* To execute logic in the threadpool */
     UvWriterReqCb cb;        /* Callback to invoke upon request completion */
+#if defined(__linux__)
     struct iocb iocb;        /* KAIO request (for writing) */
+#endif
     char errmsg[256];        /* Error description (for thread-safety) */
     queue queue;             /* Prev/next links in the inflight queue */
 };

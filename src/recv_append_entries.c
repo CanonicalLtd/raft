@@ -18,7 +18,7 @@
 static void recvSendAppendEntriesResultCb(struct raft_io_send *req, int status)
 {
     (void)status;
-    HeapFree(req);
+    MyHeapFree(req);
 }
 
 int recvAppendEntries(struct raft *r,
@@ -143,7 +143,7 @@ reply:
     message.server_id = id;
     message.server_address = address;
 
-    req = HeapMalloc(sizeof *req);
+    req = MyHeapMalloc(sizeof *req);
     if (req == NULL) {
         return RAFT_NOMEM;
     }

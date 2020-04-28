@@ -43,7 +43,7 @@ static void uvTruncateWorkCb(uv_work_t *work)
         goto err;
     }
     if (snapshots != NULL) {
-        HeapFree(snapshots);
+        MyHeapFree(snapshots);
     }
     assert(segments != NULL);
 
@@ -90,13 +90,13 @@ static void uvTruncateWorkCb(uv_work_t *work)
         goto err_after_list;
     }
 
-    HeapFree(segments);
+    MyHeapFree(segments);
     truncate->status = 0;
 
     return;
 
 err_after_list:
-    HeapFree(segments);
+    MyHeapFree(segments);
 err:
     assert(rv != 0);
     truncate->status = rv;
@@ -111,7 +111,7 @@ static void uvTruncateAfterWorkCb(uv_work_t *work, int status)
         uv->errored = true;
     }
     uv->truncate_work.data = NULL;
-    HeapFree(truncate);
+    MyHeapFree(truncate);
     UvUnblock(uv);
 }
 
@@ -123,7 +123,7 @@ static void uvTruncateBarrierCb(struct UvBarrier *barrier)
 
     /* If we're closing, don't perform truncation at all and abort here. */
     if (uv->closing) {
-        HeapFree(truncate);
+        MyHeapFree(truncate);
         return;
     }
 
@@ -156,7 +156,7 @@ int UvTruncate(struct raft_io *io, raft_index index)
     assert(index > 0);
     assert(index < uv->append_next_index);
 
-    truncate = HeapMalloc(sizeof *truncate);
+    truncate = MyHeapMalloc(sizeof *truncate);
     if (truncate == NULL) {
         rv = RAFT_NOMEM;
         goto err;
@@ -175,7 +175,7 @@ int UvTruncate(struct raft_io *io, raft_index index)
     return 0;
 
 err_after_req_alloc:
-    HeapFree(truncate);
+    MyHeapFree(truncate);
 err:
     assert(rv != 0);
     return rv;

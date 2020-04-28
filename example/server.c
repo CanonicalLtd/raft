@@ -13,6 +13,11 @@
 #define Logf(SERVER_ID, FORMAT, ...) \
     printf("%d: " FORMAT "\n", SERVER_ID, __VA_ARGS__)
 
+//apparently srandom isn't defined on mingw
+#if !defined(srandom)
+#define srandom srand
+#endif
+
 /********************************************************************
  *
  * Sample application FSM that just increases a counter.
@@ -166,8 +171,13 @@ static int ServerInit(struct Server *s,
     memset(s, 0, sizeof *s);
 
     /* Seed the random generator */
+#if defined(_WIN32)
+    /*mingw doesn't implement timespec_get*/
+    srandom(5);
+#else
     timespec_get(&now, TIME_UTC);
     srandom((unsigned)(now.tv_nsec ^ now.tv_sec));
+#endif
 
     s->loop = loop;
 
@@ -384,8 +394,10 @@ int main(int argc, char *argv[])
     dir = argv[1];
     id = (unsigned)atoi(argv[2]);
 
+#if !defined(_WIN32)
     /* Ignore SIGPIPE, see https://github.com/joyent/libuv/issues/1254 */
     signal(SIGPIPE, SIG_IGN);
+#endif
 
     /* Initialize the libuv loop. */
     rv = uv_loop_init(&loop);

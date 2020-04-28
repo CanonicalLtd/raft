@@ -31,7 +31,17 @@ static void *defaultRealloc(void *data, void *ptr, size_t size)
 static void *defaultAlignedAlloc(void *data, size_t alignment, size_t size)
 {
     (void)data;
+#if defined(_WIN32)
+    /*
+        Windows does not have support for aligned_alloc, the closest functionality
+        is provided by _aligned_malloc(), but the returned memory has to be freed with
+        _aligned_free(). Freeing this with free() would not properly clean up the memory.
+        TODO: This should be addressed
+    */
+    return _aligned_malloc(size, alignment);
+#else
     return aligned_alloc(alignment, size);
+#endif
 }
 
 static void defaultAlignedFree(void *data, size_t alignment, void *ptr)
@@ -52,12 +62,12 @@ static struct raft_heap defaultHeap = {
 
 static struct raft_heap *currentHeap = &defaultHeap;
 
-void *HeapMalloc(size_t size)
+void *MyHeapMalloc(size_t size)
 {
     return currentHeap->malloc(currentHeap->data, size);
 }
 
-void HeapFree(void *ptr)
+void MyHeapFree(void *ptr)
 {
     if (ptr == NULL) {
         return;
@@ -65,34 +75,34 @@ void HeapFree(void *ptr)
     currentHeap->free(currentHeap->data, ptr);
 }
 
-void *HeapCalloc(size_t nmemb, size_t size)
+void *MyHeapCalloc(size_t nmemb, size_t size)
 {
     return currentHeap->calloc(currentHeap->data, nmemb, size);
 }
 
-void *HeapRealloc(void *ptr, size_t size)
+void *MyHeapRealloc(void *ptr, size_t size)
 {
     return currentHeap->realloc(currentHeap->data, ptr, size);
 }
 
 void *raft_malloc(size_t size)
 {
-    return HeapMalloc(size);
+    return MyHeapMalloc(size);
 }
 
 void raft_free(void *ptr)
 {
-    HeapFree(ptr);
+    MyHeapFree(ptr);
 }
 
 void *raft_calloc(size_t nmemb, size_t size)
 {
-    return HeapCalloc(nmemb, size);
+    return MyHeapCalloc(nmemb, size);
 }
 
 void *raft_realloc(void *ptr, size_t size)
 {
-    return HeapRealloc(ptr, size);
+    return MyHeapRealloc(ptr, size);
 }
 
 void *raft_aligned_alloc(size_t alignment, size_t size)

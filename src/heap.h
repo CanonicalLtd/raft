@@ -5,12 +5,12 @@
 
 #include <stddef.h>
 
-void *HeapMalloc(size_t size);
+void *MyHeapMalloc(size_t size);
 
-void *HeapCalloc(size_t nmemb, size_t size);
+void *MyHeapCalloc(size_t nmemb, size_t size);
 
-void *HeapRealloc(void *ptr, size_t size);
+void *MyHeapRealloc(void *ptr, size_t size);
 
-void HeapFree(void *ptr);
+void MyHeapFree(void *ptr);
 
 #endif /* HEAP_H_ */

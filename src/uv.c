@@ -311,7 +311,7 @@ static int uvLoadSnapshotAndEntries(struct uv *uv,
     /* Load the most recent snapshot, if any. */
     if (snapshots != NULL) {
         char snapshot_filename[UV__FILENAME_LEN];
-        *snapshot = HeapMalloc(sizeof **snapshot);
+        *snapshot = MyHeapMalloc(sizeof **snapshot);
         if (*snapshot == NULL) {
             rv = RAFT_NOMEM;
             goto err;
@@ -319,13 +319,13 @@ static int uvLoadSnapshotAndEntries(struct uv *uv,
         rv = UvSnapshotLoad(uv, &snapshots[n_snapshots - 1], *snapshot,
                             uv->io->errmsg);
         if (rv != 0) {
-            HeapFree(*snapshot);
+            MyHeapFree(*snapshot);
             *snapshot = NULL;
             goto err;
         }
         uvSnapshotFilenameOf(&snapshots[n_snapshots - 1], snapshot_filename);
         tracef("most recent snapshot at %lld", (*snapshot)->index);
-        HeapFree(snapshots);
+        MyHeapFree(snapshots);
         snapshots = NULL;
 
         /* Update the start index. If there are closed segments on disk let's

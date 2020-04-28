@@ -73,12 +73,12 @@ static void uvSendDestroy(struct uvSend *s)
     if (s->bufs != NULL) {
         /* Just release the first buffer. Further buffers are entry or snapshot
          * payloads, which we were passed but we don't own. */
-        HeapFree(s->bufs[0].base);
+        MyHeapFree(s->bufs[0].base);
 
         /* Release the buffers array. */
-        HeapFree(s->bufs);
+        MyHeapFree(s->bufs);
     }
-    HeapFree(s);
+    MyHeapFree(s);
 }
 
 /* Initialize a new client associated with the given server. */
@@ -95,7 +95,7 @@ static int uvClientInit(struct uvClient *c,
     c->old_stream = NULL;   /* Set after closing the current connection */
     c->n_connect_attempt = 0;
     c->id = id;
-    c->address = HeapMalloc(strlen(address) + 1);
+    c->address = MyHeapMalloc(strlen(address) + 1);
     if (c->address == NULL) {
         return RAFT_NOMEM;
     }
@@ -143,8 +143,8 @@ static void uvClientMaybeDestroy(struct uvClient *c)
     QUEUE_REMOVE(&c->queue);
 
     assert(c->address != NULL);
-    HeapFree(c->address);
-    HeapFree(c);
+    MyHeapFree(c->address);
+    MyHeapFree(c);
 
     uvMaybeFireCloseCb(uv);
 }
@@ -158,7 +158,7 @@ static void uvClientDisconnectCloseCb(struct uv_handle_s *handle)
     assert(c->old_stream != NULL);
     assert(c->stream == NULL);
     assert(handle == (struct uv_handle_s *)c->old_stream);
-    HeapFree(c->old_stream);
+    MyHeapFree(c->old_stream);
     c->old_stream = NULL;
     if (c->closing) {
         uvClientMaybeDestroy(c);
@@ -427,7 +427,7 @@ static int uvGetClient(struct uv *uv,
     }
 
     /* Initialize the new connection */
-    *client = HeapMalloc(sizeof **client);
+    *client = MyHeapMalloc(sizeof **client);
     if (*client == NULL) {
         rv = RAFT_NOMEM;
         goto err;
@@ -444,7 +444,7 @@ static int uvGetClient(struct uv *uv,
     return 0;
 
 err_after_client_alloc:
-    HeapFree(*client);
+    MyHeapFree(*client);
 err:
     assert(rv != 0);
     return rv;
@@ -463,7 +463,7 @@ int UvSend(struct raft_io *io,
     assert(!uv->closing);
 
     /* Allocate a new request object. */
-    send = HeapMalloc(sizeof *send);
+    send = MyHeapMalloc(sizeof *send);
     if (send == NULL) {
         rv = RAFT_NOMEM;
         goto err;

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include <sys/uio.h>
 
 #include "array.h"
 #include "assert.h"
@@ -194,7 +193,7 @@ static int uvSnapshotLoadMeta(struct uv *uv,
         rv = RAFT_CORRUPT;
         goto err_after_open;
     }
-    buf.base = HeapMalloc(buf.len);
+    buf.base = MyHeapMalloc(buf.len);
     if (buf.base == NULL) {
         rv = RAFT_NOMEM;
         goto err_after_open;
@@ -222,13 +221,13 @@ static int uvSnapshotLoadMeta(struct uv *uv,
         goto err_after_buf_malloc;
     }
 
-    HeapFree(buf.base);
+    MyHeapFree(buf.base);
     UvOsClose(fd);
 
     return 0;
 
 err_after_buf_malloc:
-    HeapFree(buf.base);
+    MyHeapFree(buf.base);
 
 err_after_open:
     close(fd);
@@ -257,7 +256,7 @@ static int uvSnapshotLoadData(struct uv *uv,
         goto err;
     }
 
-    snapshot->bufs = HeapMalloc(sizeof *snapshot->bufs);
+    snapshot->bufs = MyHeapMalloc(sizeof *snapshot->bufs);
     snapshot->n_bufs = 1;
     if (snapshot->bufs == NULL) {
         rv = RAFT_NOMEM;
@@ -269,7 +268,7 @@ static int uvSnapshotLoadData(struct uv *uv,
     return 0;
 
 err_after_read_file:
-    HeapFree(buf.base);
+    MyHeapFree(buf.base);
 err:
     assert(rv != 0);
     return rv;
@@ -384,10 +383,10 @@ static int uvRemoveOldSegmentsAndSnapshots(struct uv *uv,
 
 out:
     if (snapshots != NULL) {
-        HeapFree(snapshots);
+        MyHeapFree(snapshots);
     }
     if (segments != NULL) {
-        HeapFree(segments);
+        MyHeapFree(segments);
     }
     return rv;
 }
@@ -446,8 +445,8 @@ static void uvSnapshotPutFinish(struct uvSnapshotPut *put)
     int status = put->status;
     struct uv *uv = put->uv;
     assert(uv->snapshot_put_work.data == NULL);
-    HeapFree(put->meta.bufs[1].base);
-    HeapFree(put);
+    MyHeapFree(put->meta.bufs[1].base);
+    MyHeapFree(put);
     req->cb(req, status);
 }
 
@@ -520,7 +519,7 @@ int UvSnapshotPut(struct raft_io *io,
 
     tracef("put snapshot at %lld, keeping %d", snapshot->index, trailing);
 
-    put = HeapMalloc(sizeof *put);
+    put = MyHeapMalloc(sizeof *put);
     if (put == NULL) {
         rv = RAFT_NOMEM;
         goto err;
@@ -571,9 +570,9 @@ int UvSnapshotPut(struct raft_io *io,
     return 0;
 
 err_after_configuration_encode:
-    HeapFree(put->meta.bufs[1].base);
+    MyHeapFree(put->meta.bufs[1].base);
 err_after_req_alloc:
-    HeapFree(put);
+    MyHeapFree(put);
 err:
     assert(rv != 0);
     return rv;
@@ -601,10 +600,10 @@ static void uvSnapshotGetWorkCb(uv_work_t *work)
         if (rv != 0) {
             get->status = rv;
         }
-        HeapFree(snapshots);
+        MyHeapFree(snapshots);
     }
     if (segments != NULL) {
-        HeapFree(segments);
+        MyHeapFree(segments);
     }
 out:
     return;
@@ -619,7 +618,7 @@ static void uvSnapshotGetAfterWorkCb(uv_work_t *work, int status)
     struct uv *uv = get->uv;
     assert(status == 0);
     QUEUE_REMOVE(&get->queue);
-    HeapFree(get);
+    MyHeapFree(get);
     req->cb(req, snapshot, req_status);
     uvMaybeFireCloseCb(uv);
 }
@@ -635,7 +634,7 @@ int UvSnapshotGet(struct raft_io *io,
     uv = io->impl;
     assert(!uv->closing);
 
-    get = HeapMalloc(sizeof *get);
+    get = MyHeapMalloc(sizeof *get);
     if (get == NULL) {
         rv = RAFT_NOMEM;
         goto err;
@@ -644,7 +643,7 @@ int UvSnapshotGet(struct raft_io *io,
     get->req = req;
     req->cb = cb;
 
-    get->snapshot = HeapMalloc(sizeof *get->snapshot);
+    get->snapshot = MyHeapMalloc(sizeof *get->snapshot);
     if (get->snapshot == NULL) {
         rv = RAFT_NOMEM;
         goto err_after_req_alloc;
@@ -664,9 +663,9 @@ int UvSnapshotGet(struct raft_io *io,
     return 0;
 
 err_after_snapshot_alloc:
-    HeapFree(get->snapshot);
+    MyHeapFree(get->snapshot);
 err_after_req_alloc:
-    HeapFree(get);
+    MyHeapFree(get);
 err:
     assert(rv != 0);
     return rv;

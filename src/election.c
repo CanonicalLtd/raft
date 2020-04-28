@@ -56,7 +56,7 @@ bool electionTimerExpired(struct raft *r)
 static void sendRequestVoteCb(struct raft_io_send *send, int status)
 {
     (void)status;
-    HeapFree(send);
+    MyHeapFree(send);
 }
 
 /* Send a RequestVote RPC to the given server. */
@@ -79,7 +79,7 @@ static int electionSend(struct raft *r,
     message.server_id = server->id;
     message.server_address = server->address;
 
-    send = HeapMalloc(sizeof *send);
+    send = MyHeapMalloc(sizeof *send);
     if (send == NULL) {
         return RAFT_NOMEM;
     }
@@ -88,7 +88,7 @@ static int electionSend(struct raft *r,
 
     rv = r->io->send(r->io, send, &message, sendRequestVoteCb);
     if (rv != 0) {
-        HeapFree(send);
+        MyHeapFree(send);
         return rv;
     }
 

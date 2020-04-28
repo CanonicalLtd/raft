@@ -4,7 +4,9 @@
 #define UV_OS_H_
 
 #include <fcntl.h>
+#if defined(__linux__)
 #include <linux/aio_abi.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <uv.h>
@@ -105,6 +107,7 @@ int UvOsRename(const char *path1, const char *path2);
 void UvOsJoin(const char *dir, const char *filename, char *path);
 
 /* TODO: figure a portable abstraction. */
+#if defined(__linux__)
 int UvOsIoSetup(unsigned nr, aio_context_t *ctxp);
 int UvOsIoDestroy(aio_context_t ctx);
 int UvOsIoSubmit(aio_context_t ctx, long nr, struct iocb **iocbpp);
@@ -115,6 +118,7 @@ int UvOsIoGetevents(aio_context_t ctx,
                     struct timespec *timeout);
 int UvOsEventfd(unsigned int initval, int flags);
 int UvOsSetDirectIo(uv_file fd);
+#endif
 
 /* Format an error message caused by a failed system call or stdlib function. */
 #define UvOsErrMsg(ERRMSG, SYSCALL, ERRNUM)              \

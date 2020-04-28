@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "uv.h": "c",
+        "cstdbool": "cpp",
+        "vfs.h": "c",
+        "statfs.h": "c",
+        "uv_ip.h": "c",
+        "in.h": "c",
+        "uio.h": "c",
+        "features.h": "c",
+        "uio_lim.h": "c",
+        "types.h": "c",
+        "wordsize.h": "c",
+        "raft.h": "c",
+        "stdio.h": "c",
+        "cstdio": "c"
+    }
+}

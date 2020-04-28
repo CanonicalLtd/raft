@@ -106,7 +106,7 @@ static void uvPrepareConsume(struct uv *uv, uv_file *fd, uvCounter *counter)
     QUEUE_REMOVE(&segment->queue);
     *fd = segment->fd;
     *counter = segment->counter;
-    HeapFree(segment);
+    MyHeapFree(segment);
 }
 
 /* Finish the oldest pending prepare request using the next available prepared
@@ -151,7 +151,7 @@ static int uvPrepareStart(struct uv *uv)
     assert(uv->prepare_inflight == NULL);
     assert(uvPrepareCount(uv) < UV__TARGET_POOL_SIZE);
 
-    segment = HeapMalloc(sizeof *segment);
+    segment = MyHeapMalloc(sizeof *segment);
     if (segment == NULL) {
         rv = RAFT_NOMEM;
         goto err;
@@ -182,7 +182,7 @@ static int uvPrepareStart(struct uv *uv)
     return 0;
 
 err_after_segment_alloc:
-    HeapFree(segment);
+    MyHeapFree(segment);
 err:
     assert(rv != 0);
     return rv;
@@ -208,7 +208,7 @@ static void uvPrepareAfterWorkCb(uv_work_t *work, int status)
             UvFsRemoveFile(uv->dir, segment->filename, errmsg);
         }
         tracef("canceled creation of %s", segment->filename);
-        HeapFree(segment);
+        MyHeapFree(segment);
         uvMaybeFireCloseCb(uv);
         return;
     }
@@ -225,7 +225,7 @@ static void uvPrepareAfterWorkCb(uv_work_t *work, int status)
             uvPrepareFinishAllRequests(uv, segment->status);
         }
         uv->errored = true;
-        HeapFree(segment);
+        MyHeapFree(segment);
         return;
     }
 
@@ -332,7 +332,7 @@ void UvPrepareClose(struct uv *uv)
         segment = QUEUE_DATA(head, struct uvIdleSegment, queue);
         QUEUE_REMOVE(&segment->queue);
         uvPrepareDiscard(uv, segment->fd, segment->counter);
-        HeapFree(segment);
+        MyHeapFree(segment);
     }
 }
 
