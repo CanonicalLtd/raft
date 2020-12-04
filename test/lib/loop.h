@@ -51,9 +51,9 @@
  * iterations is reached. */
 #define LOOP_RUN(N)                                                       \
     {                                                                     \
-        unsigned i__;                                                     \
+        unsigned i_;                                                      \
         int rv__;                                                         \
-        for (i__ = 0; i__ < N; i__++) {                                   \
+        for (i_ = 0; i_ < N; i_++) {                                      \
             rv__ = uv_run(&f->loop, UV_RUN_ONCE);                         \
             if (rv__ < 0) {                                               \
                 munit_errorf("uv_run: %s (%d)", uv_strerror(rv__), rv__); \

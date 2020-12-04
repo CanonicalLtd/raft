@@ -17,7 +17,7 @@ int uvEncodeMessage(const struct raft_message *message,
 int uvDecodeMessage(unsigned long type,
                     const uv_buf_t *header,
                     struct raft_message *message,
-                    size_t *payload_len);
+                    size_t *payloadLen);
 
 int uvDecodeBatchHeader(const void *batch,
                         struct raft_entry **entries,
@@ -58,7 +58,7 @@ void uvEncodeBatchHeader(const struct raft_entry *entries,
 
 /* Encode the content of a snapshot metadata file. */
 int uvEncodeSnapshotMeta(const struct raft_configuration *conf,
-                         raft_index conf_index,
+                         raft_index confIndex,
                          struct raft_buffer *buf);
 
 #endif /* UV_ENCODING_H_ */

@@ -8,30 +8,30 @@
 #include <unistd.h>
 
 #if defined(__cplusplus)
-#define BYTE__INLINE inline
+#define BYTE_INLINE inline
 #else
 #if defined(__clang__)
-#define BYTE__INLINE static inline __attribute__((unused))
+#define BYTE_INLINE static inline __attribute__((unused))
 #else
-#define BYTE__INLINE static inline
+#define BYTE_INLINE static inline
 #endif
 #endif
 
 /* Compile-time endianess detection (best effort). */
 #if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __LITTLE_ENDIAN)) || \
     (defined(__ARMEL__) && (__ARMEL__ == 1))
-#define BYTE__LITTLE_ENDIAN
+#define BYTE_LITTLE_ENDIAN
 #elif defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN) && \
     defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 8
-#define RAFT__BIG_ENDIAN
+#define RAFT_BIG_ENDIAN
 #endif
 
 /* Flip a 32-bit number to network byte order (little endian) */
-BYTE__INLINE uint32_t byteFlip32(uint32_t v)
+BYTE_INLINE uint32_t byteFlip32(uint32_t v)
 {
-#if defined(BYTE__LITTLE_ENDIAN)
+#if defined(BYTE_LITTLE_ENDIAN)
     return v;
-#elif defined(RAFT__BIG_ENDIAN)
+#elif defined(RAFT_BIG_ENDIAN)
     return __builtin_bswap32(v);
 #else /* Unknown endianess */
     union {
@@ -49,11 +49,11 @@ BYTE__INLINE uint32_t byteFlip32(uint32_t v)
 }
 
 /* Flip a 64-bit number to network byte order (little endian) */
-BYTE__INLINE uint64_t byteFlip64(uint64_t v)
+BYTE_INLINE uint64_t byteFlip64(uint64_t v)
 {
-#if defined(BYTE__LITTLE_ENDIAN)
+#if defined(BYTE_LITTLE_ENDIAN)
     return v;
-#elif defined(RAFT__BIG_ENDIAN)
+#elif defined(RAFT_BIG_ENDIAN)
     return __builtin_bswap64(v);
 #else
     union {
@@ -74,28 +74,28 @@ BYTE__INLINE uint64_t byteFlip64(uint64_t v)
 #endif
 }
 
-BYTE__INLINE void bytePut8(void **cursor, uint8_t value)
+BYTE_INLINE void bytePut8(void **cursor, uint8_t value)
 {
     uint8_t **p = (uint8_t **)cursor;
     **p = value;
     *p += 1;
 }
 
-BYTE__INLINE void bytePut32(void **cursor, uint32_t value)
+BYTE_INLINE void bytePut32(void **cursor, uint32_t value)
 {
     uint32_t **p = (uint32_t **)cursor;
     **p = byteFlip32(value);
     *p += 1;
 }
 
-BYTE__INLINE void bytePut64(void **cursor, uint64_t value)
+BYTE_INLINE void bytePut64(void **cursor, uint64_t value)
 {
     uint64_t **p = (uint64_t **)cursor;
     **p = byteFlip64(value);
     *p += 1;
 }
 
-BYTE__INLINE void bytePut64Unaligned(void **cursor, uint64_t value)
+BYTE_INLINE void bytePut64Unaligned(void **cursor, uint64_t value)
 {
     unsigned i;
     uint64_t flipped = byteFlip64(value);
@@ -104,14 +104,14 @@ BYTE__INLINE void bytePut64Unaligned(void **cursor, uint64_t value)
     }
 }
 
-BYTE__INLINE void bytePutString(void **cursor, const char *value)
+BYTE_INLINE void bytePutString(void **cursor, const char *value)
 {
     char **p = (char **)cursor;
     strcpy(*p, value);
     *p += strlen(value) + 1;
 }
 
-BYTE__INLINE uint8_t byteGet8(const void **cursor)
+BYTE_INLINE uint8_t byteGet8(const void **cursor)
 {
     const uint8_t **p = (const uint8_t **)cursor;
     uint8_t value = **p;
@@ -119,7 +119,7 @@ BYTE__INLINE uint8_t byteGet8(const void **cursor)
     return value;
 }
 
-BYTE__INLINE uint32_t byteGet32(const void **cursor)
+BYTE_INLINE uint32_t byteGet32(const void **cursor)
 {
     const uint32_t **p = (const uint32_t **)cursor;
     uint32_t value = byteFlip32(**p);
@@ -127,7 +127,7 @@ BYTE__INLINE uint32_t byteGet32(const void **cursor)
     return value;
 }
 
-BYTE__INLINE uint64_t byteGet64(const void **cursor)
+BYTE_INLINE uint64_t byteGet64(const void **cursor)
 {
     const uint64_t **p = (const uint64_t **)cursor;
     uint64_t value = byteFlip64(**p);
@@ -135,7 +135,7 @@ BYTE__INLINE uint64_t byteGet64(const void **cursor)
     return value;
 }
 
-BYTE__INLINE uint64_t byteGet64Unaligned(const void **cursor)
+BYTE_INLINE uint64_t byteGet64Unaligned(const void **cursor)
 {
     uint64_t value = 0;
     unsigned i;
@@ -145,18 +145,18 @@ BYTE__INLINE uint64_t byteGet64Unaligned(const void **cursor)
     return byteFlip64(value);
 }
 
-BYTE__INLINE const char *byteGetString(const void **cursor, size_t max_len)
+BYTE_INLINE const char *byteGetString(const void **cursor, size_t maxLen)
 {
     const char **p = (const char **)cursor;
     const char *value = *p;
     size_t len = 0;
-    while (len < max_len) {
+    while (len < maxLen) {
         if (*(*p + len) == 0) {
             break;
         }
         len++;
     }
-    if (len == max_len) {
+    if (len == maxLen) {
         return NULL;
     }
     *p += len + 1;
@@ -164,7 +164,7 @@ BYTE__INLINE const char *byteGetString(const void **cursor, size_t max_len)
 }
 
 /* Add padding to size if it's not a multiple of 8. */
-BYTE__INLINE size_t bytePad64(size_t size)
+BYTE_INLINE size_t bytePad64(size_t size)
 {
     size_t rest = size % sizeof(uint64_t);
 

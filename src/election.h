@@ -5,7 +5,7 @@
 
 #include "../include/raft.h"
 
-/* Reset the election_timer clock and set randomized_election_timeout to a
+/* Reset the electionTimer clock and set randomized_election_timeout to a
  * random value between election_timeout and 2 * election_timeout.
  *
  * From Section 3.4:
@@ -76,6 +76,6 @@ int electionVote(struct raft *r,
 /* Update the votes array by adding the vote from the server at the given
  * index. Return true if with this vote the server has reached the majority of
  * votes and won elections. */
-bool electionTally(struct raft *r, size_t voter_index);
+bool electionTally(struct raft *r, size_t voterIndex);
 
 #endif /* ELECTION_H_ */

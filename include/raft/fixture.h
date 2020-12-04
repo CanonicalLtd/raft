@@ -90,10 +90,10 @@ RAFT_API void raft_fixture_close(struct raft_fixture *f);
 
 /**
  * Convenience to generate a configuration object containing all servers in the
- * cluster. The first @n_voting servers will be voting ones.
+ * cluster. The first @nVoting servers will be voting ones.
  */
 RAFT_API int raft_fixture_configuration(struct raft_fixture *f,
-                                        unsigned n_voting,
+                                        unsigned nVoting,
                                         struct raft_configuration *conf);
 
 /**
@@ -126,7 +126,7 @@ RAFT_API struct raft *raft_fixture_get(struct raft_fixture *f, unsigned i);
 /**
  * Return @true if the @i'th server hasn't been killed.
  */
-RAFT_API bool raft_fixture_alive(struct raft_fixture *f, unsigned i);
+RAFT_API bool raftFixtureAlive(struct raft_fixture *f, unsigned i);
 
 /**
  * Return the index of the current leader, or the current number of servers if
@@ -168,28 +168,28 @@ RAFT_API void raft_fixture_depose(struct raft_fixture *f);
  *
  * In particular, the following happens:
  *
- * 1. If there are pending #raft_io_send requests, that have been submitted
- *    using #raft_io->send() and not yet sent, the oldest one is picked and the
+ * 1. If there are pending #raftIoSend requests, that have been submitted
+ *    using #raftIo->send() and not yet sent, the oldest one is picked and the
  *    relevant callback fired. This simulates completion of a socket write,
  *    which means that the send request has been completed. The receiver does
  *    not immediately receives the message, as the message is propagating
- *    through the network. However any memory associated with the #raft_io_send
+ *    through the network. However any memory associated with the #raftIoSend
  *    request can be released (e.g. log entries). The in-memory I/O
  *    implementation assigns a latency to each RPC message, which will get
  *    delivered to the receiver only after that amount of time elapses. If the
  *    sender and the receiver are currently disconnected, the RPC message is
  *    simply dropped. If a callback was fired, jump directly to 3. and skip 2.
  *
- * 2. All pending #raft_io_append disk writes across all servers, that have been
- *    submitted using #raft_io->append() but not yet completed, are scanned and
+ * 2. All pending #raftIoAppend disk writes across all servers, that have been
+ *    submitted using #raftIo->append() but not yet completed, are scanned and
  *    the one with the lowest completion time is picked. All in-flight network
  *    messages waiting to be delivered are scanned and the one with the lowest
  *    delivery time is picked. All servers are scanned, and the one with the
  *    lowest tick expiration time is picked. The three times are compared and
- *    the lowest one is picked. If a #raft_io_append disk write has completed,
+ *    the lowest one is picked. If a #raftIoAppend disk write has completed,
  *    the relevant callback will be invoked, if there's a network message to be
  *    delivered, the receiver's @raft_io_recv_cb callback gets fired, if a tick
- *    timer has expired the relevant #raft_io->tick() callback will be
+ *    timer has expired the relevant #raftIo->tick() callback will be
  *    invoked. Only one event will be fired. If there is more than one event to
  *    fire, one of them is picked according to the following rules: events for
  *    servers with lower index are fired first, tick events take precedence over
@@ -223,16 +223,16 @@ RAFT_API struct raft_fixture_event *raft_fixture_step_n(struct raft_fixture *f,
                                                         unsigned n);
 
 /**
- * Step the cluster until the given @stop function returns #true, or @max_msecs
+ * Step the cluster until the given @stop function returns #true, or @maxMsecs
  * have elapsed.
  *
- * Return #true if the @stop function has returned #true within @max_msecs.
+ * Return #true if the @stop function has returned #true within @maxMsecs.
  */
 RAFT_API bool raft_fixture_step_until(struct raft_fixture *f,
                                       bool (*stop)(struct raft_fixture *f,
                                                    void *arg),
                                       void *arg,
-                                      unsigned max_msecs);
+                                      unsigned maxMsecs);
 
 /**
  * Step the cluster until @msecs have elapsed.
@@ -241,63 +241,63 @@ RAFT_API void raft_fixture_step_until_elapsed(struct raft_fixture *f,
                                               unsigned msecs);
 
 /**
- * Step the cluster until a leader is elected, or @max_msecs have elapsed.
+ * Step the cluster until a leader is elected, or @maxMsecs have elapsed.
  */
 RAFT_API bool raft_fixture_step_until_has_leader(struct raft_fixture *f,
-                                                 unsigned max_msecs);
+                                                 unsigned maxMsecs);
 
 /**
- * Step the cluster until the current leader gets deposed, or @max_msecs have
+ * Step the cluster until the current leader gets deposed, or @maxMsecs have
  * elapsed.
  */
 RAFT_API bool raft_fixture_step_until_has_no_leader(struct raft_fixture *f,
-                                                    unsigned max_msecs);
+                                                    unsigned maxMsecs);
 
 /**
  * Step the cluster until the @i'th server has applied the entry at the given
- * index, or @max_msecs have elapsed. If @i equals the number of servers, then
+ * index, or @maxMsecs have elapsed. If @i equals the number of servers, then
  * step until all servers have applied the given entry.
  */
 RAFT_API bool raft_fixture_step_until_applied(struct raft_fixture *f,
                                               unsigned i,
                                               raft_index index,
-                                              unsigned max_msecs);
+                                              unsigned maxMsecs);
 
 /**
  * Step the cluster until the state of the @i'th server matches the given one,
- * or @max_msecs have elapsed.
+ * or @maxMsecs have elapsed.
  */
 RAFT_API bool raft_fixture_step_until_state_is(struct raft_fixture *f,
                                                unsigned i,
                                                int state,
-                                               unsigned max_msecs);
+                                               unsigned maxMsecs);
 
 /**
  * Step the cluster until the term of the @i'th server matches the given one,
- * or @max_msecs have elapsed.
+ * or @maxMsecs have elapsed.
  */
 RAFT_API bool raft_fixture_step_until_term_is(struct raft_fixture *f,
                                               unsigned i,
                                               raft_term term,
-                                              unsigned max_msecs);
+                                              unsigned maxMsecs);
 
 /**
  * Step the cluster until the @i'th server has voted for the @j'th one, or
- * @max_msecs have elapsed.
+ * @maxMsecs have elapsed.
  */
 RAFT_API bool raft_fixture_step_until_voted_for(struct raft_fixture *f,
                                                 unsigned i,
                                                 unsigned j,
-                                                unsigned max_msecs);
+                                                unsigned maxMsecs);
 
 /**
  * Step the cluster until all pending network messages from the @i'th server to
- * the @j'th server have been delivered, or @max_msecs have elapsed.
+ * the @j'th server have been delivered, or @maxMsecs have elapsed.
  */
 RAFT_API bool raft_fixture_step_until_delivered(struct raft_fixture *f,
                                                 unsigned i,
                                                 unsigned j,
-                                                unsigned max_msecs);
+                                                unsigned maxMsecs);
 
 /**
  * Set a function to be called after every time a fixture event occurs as
@@ -359,7 +359,7 @@ RAFT_API int raft_fixture_grow(struct raft_fixture *f, struct raft_fsm *fsm);
 
 /**
  * Set the value that will be returned to the @i'th raft instance when it asks
- * the underlying #raft_io implementation for a randomized election timeout
+ * the underlying #raftIo implementation for a randomized election timeout
  * value. The default value is 1000 + @i * 100, meaning that the election timer
  * of server 0 will expire first.
  */
@@ -410,10 +410,10 @@ RAFT_API void raft_fixture_add_entry(struct raft_fixture *f,
  * Inject an I/O failure that will be triggered on the @i'th server after @delay
  * I/O requests and occur @repeat times.
  */
-RAFT_API void raft_fixture_io_fault(struct raft_fixture *f,
-                                    unsigned i,
-                                    int delay,
-                                    int repeat);
+RAFT_API void raftFixtureIoFault(struct raft_fixture *f,
+                                 unsigned i,
+                                 int delay,
+                                 int repeat);
 
 /**
  * Return the number of messages of the given type that the @i'th server has

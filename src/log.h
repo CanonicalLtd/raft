@@ -16,11 +16,11 @@ void logClose(struct raft_log *l);
 
 /* Called at startup when populating the log with entries loaded from disk. It
  * sets the starting state of the log. The start index must be lower or equal
- * than snapshot_index + 1. */
+ * than snapshotIndex + 1. */
 void logStart(struct raft_log *l,
-              raft_index snapshot_index,
-              raft_term snapshot_term,
-              raft_index start_index);
+              raft_index snapshotIndex,
+              raft_term snapshotTerm,
+              raft_index startIndex);
 
 /* Get the number of entries the log currently contains. */
 size_t logNumEntries(struct raft_log *l);
@@ -90,17 +90,17 @@ void logTruncate(struct raft_log *l, const raft_index index);
 void logDiscard(struct raft_log *l, const raft_index index);
 
 /* To be called when taking a new snapshot. The log must contain an entry at
- * last_index, which is the index of the last entry included in the
+ * lastIndex, which is the index of the last entry included in the
  * snapshot. The function will update the last snapshot information and delete
- * all entries up last_index - trailing (included). If the log contains no entry
- * a last_index - trailing, then no entry will be deleted. */
-void logSnapshot(struct raft_log *l, raft_index last_index, unsigned trailing);
+ * all entries up lastIndex - trailing (included). If the log contains no entry
+ * a lastIndex - trailing, then no entry will be deleted. */
+void logSnapshot(struct raft_log *l, raft_index lastIndex, unsigned trailing);
 
 /* To be called when installing a snapshot.
  *
  * The log can be in any state. All outstanding entries will be discarded, the
  * last index and last term of the most recent snapshot will be set to the given
  * values, and the offset adjusted accordingly. */
-void logRestore(struct raft_log *l, raft_index last_index, raft_term last_term);
+void logRestore(struct raft_log *l, raft_index lastIndex, raft_term lastTerm);
 
 #endif /* RAFT_LOG_H_ */

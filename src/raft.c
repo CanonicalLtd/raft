@@ -68,11 +68,11 @@ int raft_init(struct raft *r,
     rv = r->io->init(r->io, r->id, r->address);
     if (rv != 0) {
         ErrMsgTransfer(r->io->errmsg, r->errmsg, "io");
-        goto err_after_address_alloc;
+        goto errAfterAddressAlloc;
     }
     return 0;
 
-err_after_address_alloc:
+errAfterAddressAlloc:
     HeapFree(r->address);
 err:
     assert(rv != 0);
@@ -120,12 +120,12 @@ void raft_set_snapshot_trailing(struct raft *r, unsigned n)
     r->snapshot.trailing = n;
 }
 
-void raft_set_max_catch_up_rounds(struct raft *r, unsigned n)
+void raftSetMaxCatchUpRounds(struct raft *r, unsigned n)
 {
     r->max_catch_up_rounds = n;
 }
 
-void raft_set_max_catch_up_round_duration(struct raft *r, unsigned msecs)
+void raftSetMaxCatchUpRoundDuration(struct raft *r, unsigned msecs)
 {
     r->max_catch_up_round_duration = msecs;
 }
@@ -195,8 +195,8 @@ int raft_configuration_add(struct raft_configuration *c,
     return configurationAdd(c, id, address, role);
 }
 
-int raft_configuration_encode(const struct raft_configuration *c,
-                              struct raft_buffer *buf)
+int raftConfigurationEncode(const struct raft_configuration *c,
+                            struct raft_buffer *buf)
 {
     return configurationEncode(c, buf);
 }

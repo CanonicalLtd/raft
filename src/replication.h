@@ -57,7 +57,7 @@ int replicationUpdate(struct raft *r,
  * satisfied.
  *
  * The rejected output parameter will be set to 0 if the Log Matching Property
- * was satisfied, or to args->prev_log_index if not.
+ * was satisfied, or to args->prevLogIndex if not.
  *
  * The async output parameter will be set to true if some of the entries in the
  * request were not present in our log, and a disk write was started to persist

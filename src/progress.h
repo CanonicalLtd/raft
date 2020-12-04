@@ -5,7 +5,7 @@
 
 #include "../include/raft.h"
 
-/* Possible values for the state field of struct raft_progress. */
+/* Possible values for the state field of struct raftProgress. */
 enum {
     PROGRESS__PROBE = 0, /* At most one AppendEntries per heartbeat interval */
     PROGRESS__PIPELINE,  /* Optimistically stream AppendEntries */
@@ -45,17 +45,17 @@ raft_index progressNextIndex(struct raft *r, unsigned i);
  * as replicated. */
 raft_index progressMatchIndex(struct raft *r, unsigned i);
 
-/* Update the last_send timestamp after an AppendEntries request has been
+/* Update the lastSend timestamp after an AppendEntries request has been
  * sent. */
 void progressUpdateLastSend(struct raft *r, unsigned i);
 
-/* Reset to false the recent_recv flag of the server at the given index,
+/* Reset to false the recentRecv flag of the server at the given index,
  * returning the previous value.
  *
  * To be called once every election_timeout milliseconds. */
 bool progressResetRecentRecv(struct raft *r, unsigned i);
 
-/* Set to true the recent_recv flag of the server at the given index.
+/* Set to true the recentRecv flag of the server at the given index.
  *
  * To be called whenever we receive an AppendEntries RPC result */
 void progressMarkRecentRecv(struct raft *r, unsigned i);
@@ -87,18 +87,18 @@ void progressOptimisticNextIndex(struct raft *r,
 /* Return false if the given @index comes from an outdated message. Otherwise
  * update the progress and returns true. To be called when receiving a
  * successful AppendEntries RPC response. */
-bool progressMaybeUpdate(struct raft *r, unsigned i, raft_index last_index);
+bool progressMaybeUpdate(struct raft *r, unsigned i, raft_index lastIndex);
 
 /* Return false if the given rejected index comes from an out of order
  * message. Otherwise decrease the progress next index to min(rejected,
- * last_index) and returns true. To be called when receiving an unsuccessful
+ * lastIndex) and returns true. To be called when receiving an unsuccessful
  * AppendEntries RPC response. */
 bool progressMaybeDecrement(struct raft *r,
                             unsigned i,
                             raft_index rejected,
-                            raft_index last_index);
+                            raft_index lastIndex);
 
-/* Return true if match_index is equal or higher than the snapshot_index. */
+/* Return true if matchIndex is equal or higher than the snapshotIndex. */
 bool progressSnapshotDone(struct raft *r, unsigned i);
 
 #endif /* PROGRESS_H_ */

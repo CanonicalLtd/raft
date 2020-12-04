@@ -41,7 +41,7 @@ int UvWriterInit(struct UvWriter *w,
                  uv_file fd,
                  bool direct /* Whether to use direct I/O */,
                  bool async /* Whether async I/O is available */,
-                 unsigned max_concurrent_writes,
+                 unsigned maxConcurrentWrites,
                  char *errmsg);
 
 /* Close the given file and release all associated resources. */

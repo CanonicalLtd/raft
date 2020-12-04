@@ -21,7 +21,7 @@
 #define UV__OPEN_TEMPLATE "open-%llu"
 
 /* Enough to hold a segment filename (either open or closed) */
-#define UV__SEGMENT_FILENAME_BUF_SIZE 34
+#define UV_SEGMENT_FILENAME_BUF_SIZE 34
 
 /* Template string for snapshot filenames: snapshot term, snapshot index,
  * creation timestamp (milliseconds since epoch). */
@@ -54,7 +54,7 @@ struct uv
 {
     struct raft_io *io;                  /* I/O object we're implementing */
     struct uv_loop_s *loop;              /* UV event loop */
-    char dir[UV__DIR_LEN];               /* Data directory */
+    char dir[UV_DIR_LEN];                /* Data directory */
     struct raft_uv_transport *transport; /* Network transport */
     struct raft_tracer *tracer;          /* Debug tracing */
     raft_id id;                          /* Server ID */
@@ -117,7 +117,7 @@ struct uvSegmentInfo
             unsigned long long counter; /* Open segment counter */
         };
     };
-    char filename[UV__SEGMENT_FILENAME_BUF_SIZE]; /* Segment filename */
+    char filename[UV_SEGMENT_FILENAME_BUF_SIZE]; /* Segment filename */
 };
 
 /* Append a new item to the given segment info list if the given filename
@@ -125,12 +125,12 @@ struct uvSegmentInfo
  * segment (open-xxx). */
 int uvSegmentInfoAppendIfMatch(const char *filename,
                                struct uvSegmentInfo *infos[],
-                               size_t *n_infos,
+                               size_t *nInfos,
                                bool *appended);
 
 /* Sort the given list of segments by comparing their filenames. Closed segments
  * come before open segments. */
-void uvSegmentSort(struct uvSegmentInfo *infos, size_t n_infos);
+void uvSegmentSort(struct uvSegmentInfo *infos, size_t nInfos);
 
 /* Keep only the closed segments whose entries are within the given trailing
  * amount past the given snapshot last index. If the given trailing amount is 0,
@@ -138,7 +138,7 @@ void uvSegmentSort(struct uvSegmentInfo *infos, size_t n_infos);
 int uvSegmentKeepTrailing(struct uv *uv,
                           struct uvSegmentInfo *segments,
                           size_t n,
-                          raft_index last_index,
+                          raft_index lastIndex,
                           size_t trailing,
                           char *errmsg);
 
@@ -148,14 +148,14 @@ int uvSegmentLoadClosed(struct uv *uv,
                         struct raft_entry *entries[],
                         size_t *n);
 
-/* Load raft entries from the given segments. The @start_index is the expected
+/* Load raft entries from the given segments. The @startIndex is the expected
  * index of the first entry of the first segment. */
 int uvSegmentLoadAll(struct uv *uv,
-                     const raft_index start_index,
+                     const raft_index startIndex,
                      struct uvSegmentInfo *segments,
-                     size_t n_segments,
+                     size_t nSegments,
                      struct raft_entry **entries,
-                     size_t *n_entries);
+                     size_t *nEntries);
 
 /* Return the number of blocks in a segments. */
 #define uvSegmentBlocks(UV) (UV->segment_size / UV->block_size)
@@ -187,7 +187,7 @@ int uvSegmentBufferFormat(struct uvSegmentBuffer *b);
  * will be appended. */
 int uvSegmentBufferAppend(struct uvSegmentBuffer *b,
                           const struct raft_entry entries[],
-                          unsigned n_entries);
+                          unsigned nEntries);
 
 /* After all entries to write have been encoded, finalize the buffer by zeroing
  * the unused memory of the last block. The out parameter will point to the
@@ -236,12 +236,12 @@ void uvSnapshotFilenameOf(struct uvSnapshotInfo *info, char *filename);
 int UvSnapshotInfoAppendIfMatch(struct uv *uv,
                                 const char *filename,
                                 struct uvSnapshotInfo *infos[],
-                                size_t *n_infos,
+                                size_t *nInfos,
                                 bool *appended);
 
 /* Sort the given list of snapshots by comparing their filenames. Older
  * snapshots will come first. */
-void UvSnapshotSort(struct uvSnapshotInfo *infos, size_t n_infos);
+void UvSnapshotSort(struct uvSnapshotInfo *infos, size_t nInfos);
 
 /* Load the snapshot associated with the given metadata. */
 int UvSnapshotLoad(struct uv *uv,
@@ -249,14 +249,14 @@ int UvSnapshotLoad(struct uv *uv,
                    struct raft_snapshot *snapshot,
                    char *errmsg);
 
-/* Implementation raft_io->snapshot_put (defined in uv_snapshot.c). */
+/* Implementation raft_io->snapshot_put (defined in uvSnapshot.c). */
 int UvSnapshotPut(struct raft_io *io,
                   unsigned trailing,
                   struct raft_io_snapshot_put *req,
                   const struct raft_snapshot *snapshot,
                   raft_io_snapshot_put_cb cb);
 
-/* Implementation of raft_io->snapshot_get (defined in uv_snapshot.c). */
+/* Implementation of raft_io->snapshot_get (defined in uvSnapshot.c). */
 int UvSnapshotGet(struct raft_io *io,
                   struct raft_io_snapshot_get *req,
                   raft_io_snapshot_get_cb cb);
@@ -266,9 +266,9 @@ int UvSnapshotGet(struct raft_io *io,
  * open ones). */
 int UvList(struct uv *uv,
            struct uvSnapshotInfo *snapshots[],
-           size_t *n_snapshots,
+           size_t *nSnapshots,
            struct uvSegmentInfo *segments[],
-           size_t *n_segments,
+           size_t *nSegments,
            char *errmsg);
 
 /* Request to obtain a newly prepared open segment. */
@@ -280,7 +280,7 @@ struct uvPrepare
     uv_file fd;                 /* Resulting segment file descriptor */
     unsigned long long counter; /* Resulting segment counter */
     uvPrepareCb cb;             /* Completion callback */
-    queue queue;                /* Links in uv_io->prepare_reqs */
+    queue queue;                /* Links in uvIo->prepare_reqs */
 };
 
 /* Get a prepared open segment ready for writing. If a prepared open segment is
@@ -353,7 +353,7 @@ int UvFinalize(struct uv *uv,
                unsigned long long counter,
                size_t used,
                raft_index first_index,
-               raft_index last_index);
+               raft_index lastIndex);
 
 /* Implementation of raft_io->send. */
 int UvSend(struct raft_io *io,

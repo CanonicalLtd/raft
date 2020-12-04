@@ -4,15 +4,15 @@
 #define ASSERT_H_
 
 #if defined(RAFT_TEST)
-extern void munit_errorf_ex(const char *filename,
-                            int line,
-                            const char *format,
-                            ...);
-#define assert(expr)                                                          \
-    do {                                                                      \
-        if (!expr) {                                                          \
-            munit_errorf_ex(__FILE__, __LINE__, "assertion failed: ", #expr); \
-        }                                                                     \
+extern void munitErrorfEx(const char *filename,
+                          int line,
+                          const char *format,
+                          ...);
+#define assert(expr)                                                        \
+    do {                                                                    \
+        if (!expr) {                                                        \
+            munitErrorfEx(__FILE__, __LINE__, "assertion failed: ", #expr); \
+        }                                                                   \
     } while (0)
 #elif defined(NDEBUG)
 #define assert(x)        \

@@ -6,7 +6,7 @@
 /* Abstract request type */
 struct request
 {
-    /* Must be kept in sync with RAFT__REQUEST in raft.h */
+    /* Must be kept in sync with RAFT_REQUEST in raft.h */
     void *data;
     int type;
     raft_index index;

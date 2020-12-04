@@ -73,12 +73,12 @@ void test_tcp_tear_down(struct test_tcp *t);
 /**
  * Start listening to a random free port on localhost.
  */
-void test_tcp_listen(struct test_tcp *t);
+void testTcpListen(struct test_tcp *t);
 
 /**
- * Return the address of the server socket created with @test_tcp_listen.
+ * Return the address of the server socket created with @testTcpListen.
  */
-const char *test_tcp_address(struct test_tcp *t);
+const char *testTcpAddress(struct test_tcp *t);
 
 /**
  * Connect the client socket to the given port on localhost.
@@ -98,11 +98,11 @@ void test_tcp_send(struct test_tcp *t, const void *buf, int len);
 /**
  * Accept inbound client connection and return the relevant socket.
  */
-int test_tcp_accept(struct test_tcp *t);
+int testTcpAccept(struct test_tcp *t);
 
 /**
  * Close the server socket.
  */
-void test_tcp_stop(struct test_tcp *t);
+void testTcpStop(struct test_tcp *t);
 
 #endif /* TEST_TCP_H */

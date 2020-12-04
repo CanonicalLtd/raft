@@ -12,7 +12,7 @@
 #include "munit.h"
 
 /* Munit parameter defining the file system type backing the temporary directory
- * created by test_dir_setup().
+ * created by testDirSetup().
  *
  * The various file systems must have been previously setup with the fs.sh
  * script. */
