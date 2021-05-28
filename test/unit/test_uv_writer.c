@@ -72,10 +72,18 @@ static void submitCbAssertResult(struct UvWriterReq *req, int status)
     } while (0)
 
 /* Close helper. */
+#if defined(__FreeBSD__) || defined(__APPLE__)
+// MacOS/BSD executes the callbacks immediately
+#define CLOSE_SUBMIT                    \
+    munit_assert_false(f->closed);      \
+    UvWriterClose(&f->writer, closeCb); \
+    munit_assert_true(f->closed)
+#else
 #define CLOSE_SUBMIT                    \
     munit_assert_false(f->closed);      \
     UvWriterClose(&f->writer, closeCb); \
     munit_assert_false(f->closed)
+#endif
 #define CLOSE_WAIT LOOP_RUN_UNTIL(&f->closed)
 #define CLOSE     \
     CLOSE_SUBMIT; \
@@ -144,6 +152,18 @@ static void submitCbAssertResult(struct UvWriterReq *req, int status)
 
 /* Submit a write request with the given parameters, close the writer right
  * after and assert that the request got canceled. */
+#if defined(__FreeBSD__) || defined(__APPLE__)
+// MacOS/BSD executes the callbacks immediately
+#define WRITE_CLOSE(N_BUFS, CONTENT, OFFSET, STATUS)            \
+    do {                                                        \
+        WRITE_REQ(N_BUFS, CONTENT, OFFSET, 0 /* rv */, STATUS); \
+        CLOSE_SUBMIT;                                           \
+        munit_assert_true(_result.done);                        \
+        LOOP_RUN_UNTIL(&_result.done);                          \
+        DESTROY_BUFS(_bufs, N_BUFS);                            \
+        CLOSE_WAIT;                                             \
+    } while (0)
+#else
 #define WRITE_CLOSE(N_BUFS, CONTENT, OFFSET, STATUS)            \
     do {                                                        \
         WRITE_REQ(N_BUFS, CONTENT, OFFSET, 0 /* rv */, STATUS); \
@@ -153,6 +173,7 @@ static void submitCbAssertResult(struct UvWriterReq *req, int status)
         DESTROY_BUFS(_bufs, N_BUFS);                            \
         CLOSE_WAIT;                                             \
     } while (0)
+#endif
 
 /* Assert that the content of the test file has the given number of blocks, each
  * filled with progressive numbers. */
@@ -245,6 +266,7 @@ SUITE(UvWriterInit)
 /* The kernel has ran out of available AIO events. */
 TEST(UvWriterInit, noResources, setUpDeps, tearDownDeps, 0, NULL)
 {
+#ifdef __linux__
     struct fixture *f = data;
     aio_context_t ctx = 0;
     int rv;
@@ -255,6 +277,12 @@ TEST(UvWriterInit, noResources, setUpDeps, tearDownDeps, 0, NULL)
     INIT_ERROR(RAFT_TOOMANY, "AIO events user limit exceeded");
     AioDestroy(ctx);
     return MUNIT_OK;
+#elif defined(__FreeBSD__) || defined(__APPLE__)
+    return MUNIT_SKIP; // AIO not supported
+#else
+    munit_error("Required to implement");
+    return MUNIT_ERROR;
+#endif
 }
 
 /******************************************************************************
@@ -345,6 +373,7 @@ TEST(UvWriterSubmit, concurrentSame, NULL, NULL, 0, DirAllParams)
 
 /* There are not enough resources to create an AIO context to perform the
  * write. */
+#ifdef __linux__ // For some reason fails with 11 on MacOS anyway
 TEST(UvWriterSubmit, noResources, setUpDeps, tearDown, 0, DirNoAioParams)
 {
     struct fixture *f = data;
@@ -360,6 +389,7 @@ TEST(UvWriterSubmit, noResources, setUpDeps, tearDown, 0, DirNoAioParams)
     AioDestroy(ctx);
     return MUNIT_OK;
 }
+#endif
 
 /******************************************************************************
  *

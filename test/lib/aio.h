@@ -2,6 +2,7 @@
 #ifndef TEST_AIO_H
 #define TEST_AIO_H
 
+#ifdef __linux__
 #include <linux/aio_abi.h>
 
 /* Fill the AIO subsystem resources by allocating a lot of events to the given
@@ -15,5 +16,6 @@ int AioFill(aio_context_t *ctx, unsigned n);
 
 /* Destroy the given AIO context. */
 void AioDestroy(aio_context_t ctx);
+#endif
 
 #endif /* TEST_AIO_H */

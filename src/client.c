@@ -198,13 +198,14 @@ int raft_add(struct raft *r,
 
     req->cb = cb;
 
-    rv = clientChangeConfiguration(r, req, &configuration);
-    if (rv != 0) {
-        goto err_after_configuration_copy;
-    }
-
     assert(r->leader_state.change == NULL);
     r->leader_state.change = req;
+
+    rv = clientChangeConfiguration(r, req, &configuration);
+    if (rv != 0) {
+        r->leader_state.change = NULL;
+        goto err_after_configuration_copy;
+    }
 
     return 0;
 
@@ -352,13 +353,14 @@ int raft_remove(struct raft *r,
 
     req->cb = cb;
 
-    rv = clientChangeConfiguration(r, req, &configuration);
-    if (rv != 0) {
-        goto err_after_configuration_copy;
-    }
-
     assert(r->leader_state.change == NULL);
     r->leader_state.change = req;
+
+    rv = clientChangeConfiguration(r, req, &configuration);
+    if (rv != 0) {
+        r->leader_state.change = NULL;
+        goto err_after_configuration_copy;
+    }
 
     return 0;
 

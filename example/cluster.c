@@ -7,6 +7,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <signal.h>
+#endif
+
 #define N_SERVERS 3 /* Number of servers in the example cluster */
 
 static int ensureDir(const char *dir)

@@ -77,6 +77,12 @@ void *DirZfsSetUp(const MunitParameter params[], void *user_data);
  * system is available. */
 void *DirXfsSetUp(const MunitParameter params[], void *user_data);
 
+/* Create a temporary test directory backed by hfs.
+ *
+ * Return a pointer the path of the created directory, or NULL if no hfs file
+ * system is available. */
+void *DirHfsSetUp(const MunitParameter params[], void *user_data);
+
 /* Recursively remove a temporary directory. */
 void DirTearDown(void *data);
 

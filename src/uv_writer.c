@@ -7,6 +7,18 @@
 #include "assert.h"
 #include "heap.h"
 
+/* Return the total lengths of the given buffers. */
+static size_t lenOfBufs(const uv_buf_t bufs[], unsigned n)
+{
+    size_t len = 0;
+    unsigned i;
+    for (i = 0; i < n; i++) {
+        len += bufs[i].len;
+    }
+    return len;
+}
+
+#ifdef __linux__
 /* Copy the error message from the request object to the writer object. */
 static void uvWriterReqTransferErrMsg(struct UvWriterReq *req)
 {
@@ -204,6 +216,7 @@ static void uvWriterPollCb(uv_poll_t *poller, int status, int events)
         uvWriterReqFinish(req);
     }
 }
+#endif /* __linux__ */
 
 int UvWriterInit(struct UvWriter *w,
                  struct uv_loop_s *loop,
@@ -219,6 +232,13 @@ int UvWriterInit(struct UvWriter *w,
     w->data = data;
     w->loop = loop;
     w->fd = fd;
+
+#ifndef __linux__
+    (void)direct;
+    (void)async;
+    (void)max_concurrent_writes;
+    (void)errmsg;
+#else
     w->async = async;
     w->ctx = 0;
     w->events = NULL;
@@ -306,9 +326,12 @@ err_after_io_setup:
     UvOsIoDestroy(w->ctx);
 err:
     assert(rv != 0);
+#endif /* __linux__ */
+
     return rv;
 }
 
+#ifdef __linux__
 static void uvWriterCleanUpAndFireCloseCb(struct UvWriter *w)
 {
     assert(w->closing);
@@ -363,20 +386,21 @@ static void uvWriterCheckCb(struct uv_check_s *check)
     }
     uv_close((struct uv_handle_s *)&w->check, uvWriterCheckCloseCb);
 }
+#endif
 
 void UvWriterClose(struct UvWriter *w, UvWriterCloseCb cb)
 {
-    int rv;
     assert(!w->closing);
     w->closing = true;
     w->close_cb = cb;
 
+#ifdef __linux__
     /* We can close the event file descriptor right away, but we shouldn't close
      * the main file descriptor or destroy the AIO context since there might be
      * threadpool requests in flight. */
     UvOsClose(w->event_fd);
 
-    rv = uv_poll_stop(&w->event_poller);
+    int rv = uv_poll_stop(&w->event_poller);
     assert(rv == 0); /* Can this ever fail? */
 
     uv_close((struct uv_handle_s *)&w->event_poller, uvWriterPollerCloseCb);
@@ -388,17 +412,10 @@ void UvWriterClose(struct UvWriter *w, UvWriterCloseCb cb)
     } else {
         uv_close((struct uv_handle_s *)&w->check, uvWriterCheckCloseCb);
     }
-}
-
-/* Return the total lengths of the given buffers. */
-static size_t lenOfBufs(const uv_buf_t bufs[], unsigned n)
-{
-    size_t len = 0;
-    unsigned i;
-    for (i = 0; i < n; i++) {
-        len += bufs[i].len;
-    }
-    return len;
+#else
+    uv_fs_close(w->loop, NULL, w->fd, NULL); //TODO: NULL for callback and request?
+    cb(w);
+#endif /* __linux__ */
 }
 
 int UvWriterSubmit(struct UvWriter *w,
@@ -408,11 +425,46 @@ int UvWriterSubmit(struct UvWriter *w,
                    size_t offset,
                    UvWriterReqCb cb)
 {
+    assert(!w->closing);
+    assert(w->fd >= 0);
+#ifdef __linux__
+    assert(w->event_fd >= 0);
+    assert(w->ctx != 0);
+    assert(req != NULL);
+    assert(bufs != NULL);
+    assert(n > 0);
+#endif
+
+    req->writer = w;
+    req->len = lenOfBufs(bufs, n);
+    req->status = -1;
+    req->work.data = NULL;
+    req->cb = cb;
+    memset(req->errmsg, 0, sizeof req->errmsg);
+
+#ifndef __linux__
+    uv_fs_t write_req;
+
+    uv_fs_write(w->loop, &write_req, w->fd, bufs, n, (int64_t)offset, NULL);
+
+    int result = (int)write_req.result;
+    // TODO: should probably check that write_req.result == n?
+    if (result == -1) {
+        req->status = RAFT_IOERR;
+    } else {
+        req->status = 0;
+    }
+
+    cb(req, req->status);
+
+    return req->status;
+#else
     int rv = 0;
+    memset(&req->iocb, 0, sizeof req->iocb);
+
 #if defined(RWF_NOWAIT)
     struct iocb *iocbs = &req->iocb;
 #endif /* RWF_NOWAIT */
-    assert(!w->closing);
 
     /* TODO: at the moment we are not leveraging the support for concurrent
      *       writes, so ensure that we're getting write requests
@@ -421,21 +473,6 @@ int UvWriterSubmit(struct UvWriter *w,
         assert(QUEUE_IS_EMPTY(&w->poll_queue));
         assert(QUEUE_IS_EMPTY(&w->work_queue));
     }
-
-    assert(w->fd >= 0);
-    assert(w->event_fd >= 0);
-    assert(w->ctx != 0);
-    assert(req != NULL);
-    assert(bufs != NULL);
-    assert(n > 0);
-
-    req->writer = w;
-    req->len = lenOfBufs(bufs, n);
-    req->status = -1;
-    req->work.data = NULL;
-    req->cb = cb;
-    memset(&req->iocb, 0, sizeof req->iocb);
-    memset(req->errmsg, 0, sizeof req->errmsg);
 
     req->iocb.aio_fildes = (uint32_t)w->fd;
     req->iocb.aio_lio_opcode = IOCB_CMD_PWRITEV;
@@ -527,4 +564,5 @@ done:
 err:
     assert(rv != 0);
     return rv;
+#endif /* __linux__ */
 }

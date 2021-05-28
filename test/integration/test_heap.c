@@ -48,6 +48,6 @@ TEST(raft_heap, aligned_alloc, NULL, NULL, 0, NULL)
     p = raft_aligned_alloc(1024, 2048);
     munit_assert_ptr_not_null(p);
     munit_assert_int((uintptr_t)p % 1024, ==, 0);
-    raft_free(p);
+    raft_aligned_free(1024, p);
     return MUNIT_OK;
 }

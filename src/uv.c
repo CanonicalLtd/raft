@@ -534,12 +534,14 @@ static int uvBootstrap(struct raft_io *io,
     /* Write the term */
     rv = uvSetTerm(io, 1);
     if (rv != 0) {
+        ErrMsgPrintf(io->errmsg, "Unable to set UV term");
         return rv;
     }
 
     /* Create the first closed segment file, containing just one entry. */
     rv = uvSegmentCreateFirstClosed(uv, configuration);
     if (rv != 0) {
+        ErrMsgPrintf(io->errmsg, "Unable to create first closed segment");
         return rv;
     }
 

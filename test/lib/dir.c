@@ -16,13 +16,13 @@
 
 #define TEST_DIR_TEMPLATE "./tmp/%s/raft-test-XXXXXX"
 
-static char *dirAll[] = {"tmpfs", "ext4", "btrfs", "xfs", "zfs", NULL};
+static char *dirAll[] = {"tmpfs", "ext4", "btrfs", "xfs", "zfs", "hfs", NULL};
 
 static char *dirTmpfs[] = {"tmpfs", NULL};
 
 static char *dirAio[] = {"btrfs", "ext4", "xfs", NULL};
 
-static char *dirNoAio[] = {"tmpfs", "zfs", NULL};
+static char *dirNoAio[] = {"tmpfs", "zfs", "hfs", NULL};
 
 MunitParameterEnum DirTmpfsParams[] = {
     {DIR_FS_PARAM, dirTmpfs},
@@ -75,6 +75,8 @@ void *DirSetUp(MUNIT_UNUSED const MunitParameter params[],
         return DirZfsSetUp(params, user_data);
     } else if (strcmp(fs, "xfs") == 0) {
         return DirXfsSetUp(params, user_data);
+    } else if (strcmp(fs, "hfs") == 0) {
+        return DirHfsSetUp(params, user_data);
     }
     munit_errorf("Unsupported file system %s", fs);
     return NULL;
@@ -108,6 +110,12 @@ void *DirXfsSetUp(MUNIT_UNUSED const MunitParameter params[],
                   MUNIT_UNUSED void *user_data)
 {
     return dirMakeTemp(getenv("RAFT_TMP_XFS"));
+}
+
+void *DirHfsSetUp(MUNIT_UNUSED const MunitParameter params[],
+                    MUNIT_UNUSED void *user_data)
+{
+    return dirMakeTemp(getenv("RAFT_TMP_HFS"));
 }
 
 /* Wrapper around remove(), compatible with ntfw. */
@@ -397,7 +405,21 @@ void DirFill(const char *dir, const size_t n)
     fd = open(path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     munit_assert_int(fd, !=, -1);
 
+#ifdef __linux__
     rv = posix_fallocate(fd, 0, size - n);
+#else // MacOS
+    // Try to get a continous chunk of disk space
+    fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, size - n, -1};
+    rv = fcntl(fd, F_PREALLOCATE, &store);
+    if (-1 == rv) {
+        // Perhaps we are too fragmented, allocate non-continuous
+        store.fst_flags = F_ALLOCATEALL;
+        rv = fcntl(fd, F_PREALLOCATE, &store);
+        if (-1 == rv)
+             false;
+    }
+    rv = ftruncate(fd, size - n);
+#endif
     munit_assert_int(rv, ==, 0);
 
     /* If n is zero, make sure any further write fails with ENOSPC */

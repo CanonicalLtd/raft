@@ -10,6 +10,21 @@ AC_USE_SYSTEM_EXTENSIONS # Defines _GNU_SOURCE and similar
 
 LT_INIT
 
+AC_CANONICAL_HOST
+
+build_linux=no
+build_windows=no
+build_mac=no
+
+#Detect target OS
+AS_CASE([$host_os],[linux*],[build_linux=yes])
+AS_CASE([$host_os],[mingw*],[build_windows=yes])
+AS_CASE([$host_os],[darwin*],[build_mac=yes])
+
+AM_CONDITIONAL([LINUX], [test "x$build_linux" = "xyes"])
+AM_CONDITIONAL([WINDOWS], [test "x$build_windows" = "xyes"])
+AM_CONDITIONAL([MAC], [test "x$build_mac" = "xyes"])
+
 # The libuv raft_io implementation is built by default if libuv is found, unless
 # explicitly disabled.
 AC_ARG_ENABLE(uv, AS_HELP_STRING([--disable-uv], [do not build the libuv-based raft_io implementation]))
@@ -168,6 +183,21 @@ CC_CHECK_FLAGS_APPEND([AM_LDFLAGS],[LDFLAGS],[ \
   --param=ssp-buffer-size=4 \
 ])
 AC_SUBST(AM_LDLAGS)
+
+CC_CHECK_FLAGS_APPEND([AM_LDFLAGS],[LDFLAGS],[ \
+  -z relro \
+  -z now \
+  -fstack-protector-strong \
+  --param=ssp-buffer-size=4 \
+])
+AC_SUBST(AM_LDLAGS)
+
+case $host in
+  *mingw*)
+  # -D__USE_MINGW_ANSI_STDIO is deprecated it seems.
+  CC_CHECK_FLAGS_APPEND([AM_CFLAGS],[CFLAGS],[-D_POSIX])
+  ;;
+esac
 
 AC_CONFIG_FILES([raft.pc Makefile])
 AC_OUTPUT

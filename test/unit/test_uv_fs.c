@@ -55,6 +55,7 @@ TEST(UvFsCheckDir, doesNotExist, DirSetUp, DirTearDown, 0, NULL)
 /* If the process can't access the directory, an error is returned. */
 TEST(UvFsCheckDir, permissionDenied, NULL, NULL, 0, NULL)
 {
+#ifdef __linux__
     bool has_access = DirHasFile("/proc/1", "root");
     /* Skip the test is the process actually has access to /proc/1/root. */
     if (has_access) {
@@ -63,6 +64,12 @@ TEST(UvFsCheckDir, permissionDenied, NULL, NULL, 0, NULL)
     CHECK_DIR_ERROR("/proc/1/root", RAFT_UNAUTHORIZED,
                     "can't access directory '/proc/1/root'");
     return MUNIT_OK;
+#elif defined(__APPLE__)
+    return MUNIT_SKIP; // LibUV does not return UV_EACCES for MacOS dirs
+#else
+    munit_error("Required to implement");
+    return MUNIT_ERROR;
+#endif
 }
 
 /* If the given path contains a non-directory prefix, an error is returned. */
@@ -275,8 +282,8 @@ TEST(UvFsProbeCapabilities, tmpfs, DirTmpfsSetUp, DirTearDown, 0, NULL)
     return MUNIT_OK;
 }
 
-/* ZFS 0.8 reports that it supports direct I/O, but does not support fully
- * support asynchronous kernel AIO. */
+/* ZFS 0.8 reports that it supports direct I/O, but does not fully support
+ * asynchronous kernel AIO. */
 TEST(UvFsProbeCapabilities, zfsDirectIO, DirZfsSetUp, DirTearDown, 0, NULL)
 {
     const char *dir = data;

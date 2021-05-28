@@ -37,6 +37,9 @@ jobs:
     dist: focal
     arch: amd64
 
+  - os: osx
+    osx_image: xcode12.2
+
   - if: type != pull_request
     compiler: clang
     dist: bionic
@@ -61,19 +64,34 @@ jobs:
 before_script:
   - git clone --depth 1 https://github.com/edlund/amalgamate.git
   - export PATH=$PATH:$PWD/amalgamate
+  - | # Build libuv dependency on MacOS
+    if [ $TRAVIS_OS_NAME = 'osx' ]; then
+      git clone --depth 1 https://github.com/libuv/libuv.git
+      cd libuv
+      git checkout v1.41.0
+      sh autogen.sh
+      ./configure
+      make -j8
+    fi
 
 script:
+  - cd "$TRAVIS_BUILD_DIR"
   - autoreconf -i
+  - | # Use built libuv on MacOS
+    if [ $TRAVIS_OS_NAME = 'osx' ]; then
+      export UV_CFLAGS="-I$(pwd)/libuv/include"
+      export UV_LIBS="-L$(pwd)/libuv/.libs -luv"
+    fi
   - |
-    if [ $TRAVIS_CPU_ARCH = "s390x" ] || [ $TRAVIS_CPU_ARCH = "arm64" ]; then
+    if [ "$TRAVIS_CPU_ARCH" = "s390x" -o "$TRAVIS_CPU_ARCH" = "arm64" ]; then
       ./configure --enable-example --enable-debug --enable-code-coverage
     else
-      ./configure --enable-example --enable-debug --enable-code-coverage --enable-sanitize
+      ./configure --enable-example --enable-debug $([ $TRAVIS_OS_NAME = 'osx' ] || echo '--enable-code-coverage --enable-sanitize')
     fi
   - amalgamate.py --config=amalgamation.json --source=$(pwd)
-  - $CC raft.c -c -D_GNU_SOURCE -DHAVE_LINUX_AIO_ABI_H -Wall -Wextra -Wpedantic -fpic
+  - $CC raft.c -c -D_GNU_SOURCE $([ $TRAVIS_OS_NAME != 'linux' ] || echo '-DHAVE_LINUX_AIO_ABI_H') -Wall -Wextra -Wpedantic -fpic $UV_CFLAGS
   - ./test/lib/fs.sh setup
-  - make check CFLAGS=-O0 $(./test/lib/fs.sh detect) || (cat ./test-suite.log && false)
+  - travis_wait 30 make check CFLAGS=-O0 $(./test/lib/fs.sh detect) || (cat ./test-suite.log && false)
   - if [ $TRAVIS_COMPILER = gcc ]; then make code-coverage-capture; fi
   - ./test/lib/fs.sh teardown
 

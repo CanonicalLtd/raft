@@ -395,7 +395,11 @@ int uvSegmentLoadClosed(struct uv *uv,
         goto err;
     }
     if (format != UV__DISK_FORMAT) {
+#if defined(__FreeBSD__) || defined(__APPLE__)
+        ErrMsgPrintf(uv->io->errmsg, "unexpected format version %llu", format);
+#else
         ErrMsgPrintf(uv->io->errmsg, "unexpected format version %ju", format);
+#endif
         rv = RAFT_CORRUPT;
         goto err_after_read;
     }
@@ -524,7 +528,11 @@ static int uvLoadOpenSegment(struct uv *uv,
                 goto done;
             }
         }
+#if defined(__FreeBSD__) || defined(__APPLE__)
+        ErrMsgPrintf(uv->io->errmsg, "unexpected format version %llu", format);
+#else
         ErrMsgPrintf(uv->io->errmsg, "unexpected format version %ju", format);
+#endif
         rv = RAFT_CORRUPT;
         goto err_after_read;
     }

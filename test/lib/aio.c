@@ -4,6 +4,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#ifdef __linux__
 #include "munit.h"
 
 int AioFill(aio_context_t *ctx, unsigned n)
@@ -56,3 +57,4 @@ void AioDestroy(aio_context_t ctx)
     rv = syscall(__NR_io_destroy, ctx);
     munit_assert_int(rv, ==, 0);
 }
+#endif

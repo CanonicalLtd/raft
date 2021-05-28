@@ -487,6 +487,7 @@ TEST(append, noSpaceResolved, setUp, tearDownDeps, 0, DirTmpfsParams)
 /* An error occurs while performing a write. */
 TEST(append, writeError, setUp, tearDown, 0, NULL)
 {
+#ifdef __linux__
     struct fixture *f = data;
     aio_context_t ctx = 0;
 
@@ -499,6 +500,12 @@ TEST(append, writeError, setUp, tearDown, 0, NULL)
     APPEND_WAIT(0);
     AioDestroy(ctx);
     return MUNIT_OK;
+#elif defined(__FreeBSD__) || defined(__APPLE__)
+    return MUNIT_SKIP; // AIO not supported
+#else
+    munit_error("Required to implement");
+    return MUNIT_ERROR;
+#endif
 }
 
 static char *oomHeapFaultDelay[] = {"1", /* FIXME "2", */ NULL};
@@ -578,6 +585,7 @@ TEST(append, currentSegment, setUp, tearDownDeps, 0, NULL)
 /* The kernel has ran out of available AIO events. */
 TEST(append, ioSetupError, setUp, tearDown, 0, NULL)
 {
+#ifdef __linux__
     struct fixture *f = data;
     aio_context_t ctx = 0;
     int rv;
@@ -588,6 +596,12 @@ TEST(append, ioSetupError, setUp, tearDown, 0, NULL)
     APPEND_FAILURE(1, 64, RAFT_TOOMANY,
                    "setup writer for open-1: AIO events user limit exceeded");
     return MUNIT_OK;
+#elif defined(__FreeBSD__) || defined(__APPLE__)
+    return MUNIT_SKIP; // AIO not supported
+#else
+    munit_error("Required to implement");
+    return MUNIT_ERROR;
+#endif
 }
 
 /*===========================================================================

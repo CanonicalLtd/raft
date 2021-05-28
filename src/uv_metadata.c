@@ -29,7 +29,11 @@ static int uvMetadataDecode(const void *buf,
     uint64_t format;
     format = byteGet64(&cursor);
     if (format != UV__DISK_FORMAT) {
+#if defined(__FreeBSD__) || defined(__APPLE__)
+        ErrMsgPrintf(errmsg, "bad format version %llu", format);
+#else
         ErrMsgPrintf(errmsg, "bad format version %ju", format);
+#endif
         return RAFT_MALFORMED;
     }
     metadata->version = byteGet64(&cursor);
@@ -101,8 +105,13 @@ static int uvMetadataLoadN(const char *dir,
             }
             return 0;
         }
-        ErrMsgPrintf(errmsg, "%s has size %ju instead of %zu", filename, size,
+#if defined(__FreeBSD__) || defined(__APPLE__)
+        ErrMsgPrintf(errmsg, "%s has size %lld instead of %zu", filename, size,
                      sizeof content);
+#else
+        ErrMsgPrintf(errmsg, "%s has size %jd instead of %zu", filename, size,
+                     sizeof content);
+#endif
         return RAFT_CORRUPT;
     }
 
