@@ -38,3 +38,6 @@ benchmark/os-disk-write
 tmp
 conftest*
 doc/build
+CMakeLists.txt.user
+/.vs
+/out
